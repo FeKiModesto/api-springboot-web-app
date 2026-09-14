@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -23,6 +23,14 @@ jobs:
         with:
           java-version: '11'
           distribution: 'microsoft'
+
+      - name: Create application.properties
+        run: |
+          echo "spring.datasource.url=${{ secrets.DB_URL }}" > src/main/resources/application.properties
+          echo "spring.datasource.username=${{ secrets.DB_USERNAME }}" >> src/main/resources/application.properties
+          echo "spring.datasource.password=${{ secrets.DB_PASSWORD }}" >> src/main/resources/application.properties
+          echo "spring.datasource.driver-class-name=oracle.jdbc.OracleDriver" >> src/main/resources/application.properties
+          echo "spring.jpa.database-platform=org.hibernate.dialect.Oracle10gDialect" >> src/main/resources/application.properties
 
       - name: Build with Maven
         run: mvn clean install
@@ -36,13 +44,13 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build
-    
+
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: java-app
-      
+
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
@@ -50,4 +58,4 @@ jobs:
           app-name: 'api-vaga-rm561810'
           slot-name: 'Production'
           package: '*.jar'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F46C6030544A40EDAF7936AC1611C3F7 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
